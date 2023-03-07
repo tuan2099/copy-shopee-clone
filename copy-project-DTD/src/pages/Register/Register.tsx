@@ -10,6 +10,7 @@ import { registerAccount } from 'src/apis/auth.api'
 import { AppContext } from 'src/context/app.context'
 import { isAxiosUnprocessableEntityError } from 'src/uitils/uitils'
 import { ErrorResponse } from 'src/types/uitils.type'
+import { useNavigate } from 'react-router-dom'
 
 type FormData = Schema
 function Register() {
@@ -21,7 +22,8 @@ function Register() {
   } = useForm<FormData>({
     resolver: yupResolver(schema)
   })
-  const { setProfile } = useContext(AppContext)
+  const navigate = useNavigate()
+  const { setProfile, setIsAuthenticate } = useContext(AppContext)
   const RegisteraccountMutation = useMutation({
     mutationFn: (body: Omit<FormData, 'confirm_password'>) => registerAccount(body)
   })
@@ -29,7 +31,9 @@ function Register() {
     const body = omit(data, ['confirm_password'])
     RegisteraccountMutation.mutate(body, {
       onSuccess(data) {
+        setIsAuthenticate(true)
         setProfile(data.data.data.user)
+        navigate('/')
       },
       onError: (error) => {
         if (isAxiosUnprocessableEntityError<ErrorResponse<Omit<FormData, 'confirm_password'>>>(error)) {
@@ -78,7 +82,13 @@ function Register() {
           register={register}
           errorsMesage={errors.confirm_password?.message}
         />
-        <Button type='submit'>Đăng kí</Button>
+        <Button
+          isLoading={RegisteraccountMutation.isLoading}
+          disabled={RegisteraccountMutation.isLoading}
+          type='submit'
+        >
+          {RegisteraccountMutation.isLoading ? 'Loading...' : 'Đăng kí'}
+        </Button>
       </form>
     </>
   )

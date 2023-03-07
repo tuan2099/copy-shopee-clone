@@ -2,6 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { useMutation } from '@tanstack/react-query'
 import React, { useContext } from 'react'
 import { useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { login } from 'src/apis/auth.api'
 import Button from 'src/components/button'
 import Input from 'src/components/input'
@@ -15,8 +16,8 @@ type FormData = Omit<Schema, 'confirm_password'>
 const loginSchema = schema.omit(['confirm_password'])
 
 function Login() {
-  const { setProfile } = useContext(AppContext)
-
+  const { setIsAuthenticate, setProfile } = useContext(AppContext)
+  const navigate = useNavigate()
   const {
     register,
     handleSubmit,
@@ -33,7 +34,9 @@ function Login() {
   const onSubmit = handleSubmit((data) => {
     loginAccountMutation.mutate(data, {
       onSuccess: (data: { data: { data: { user: React.SetStateAction<User | null> } } }) => {
+        setIsAuthenticate(true)
         setProfile(data.data.data.user)
+        navigate('/')
       },
       onError: (error) => {
         if (isAxiosUnprocessableEntityError<ErrorResponse<FormData>>(error)) {
@@ -74,7 +77,9 @@ function Login() {
           register={register}
           errorsMesage={errors.password?.message}
         />
-        <Button type='submit'>Đăng nhập</Button>
+        <Button isLoading={loginAccountMutation.isLoading} disabled={loginAccountMutation.isLoading} type='submit'>
+          {loginAccountMutation.isLoading ? 'Loading...' : 'Đăng nhập'}
+        </Button>
       </form>
     </>
   )
